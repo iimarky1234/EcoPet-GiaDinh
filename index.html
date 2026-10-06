@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🐾 EcoPet Gia Định — Thú Ảo Vi Khí Hậu IoT</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%22><text y=%2226%22 font-size=%2226%22>🐾</text></svg>">
+</head>
+<body class="theme-day">
+
+  <!-- TOP APP BAR -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="brand">
+        <span class="brand-icon">🐾</span>
+        <div>
+          <h1 class="brand-title">EcoPet Gia Định</h1>
+          <span class="brand-sub" data-i18n="subTitle">Thú Ảo Vi Khí Hậu IoT (Trạm MakerLab #3428136)</span>
+        </div>
+      </div>
+      <div class="station-pill" id="stationStatusPill">
+        <span class="status-dot live"></span>
+        <span class="status-label" id="statusLabelText">Đang Kết Nối IoT...</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <!-- Mode Toggle: Live vs God Mode -->
+      <div class="mode-toggle-group">
+        <button id="btnLiveMode" class="btn-mode active" title="Dữ liệu cảm biến thật từ ThingSpeak">
+          <span class="mode-dot live-pulse"></span>
+          <span data-i18n="liveMode">Trực Tiếp</span>
+        </button>
+        <button id="btnGodMode" class="btn-mode" title="Mở hộp cát Sandbox để điều khiển thời tiết">
+          <span>⚡</span>
+          <span data-i18n="godMode">Hộp Cát Thời Tiết</span>
+        </button>
+      </div>
+
+      <!-- Coin Wallet -->
+      <div class="wallet-badge" title="Xu EcoCoins thu thập được">
+        <span class="coin-icon">🪙</span>
+        <span class="coin-amount" id="coinBalance">150</span>
+      </div>
+
+      <!-- Audio Mute Button -->
+      <button id="btnSoundToggle" class="btn-icon" title="Bật/Tắt âm thanh tổng hợp Web Audio">
+        <span id="soundIcon">🔊</span>
+      </button>
+
+      <!-- Language Toggle -->
+      <button id="btnLangToggle" class="btn-pill" title="Chuyển đổi ngôn ngữ Tiếng Việt / English">
+        <span id="langLabel">VI / EN</span>
+      </button>
+
+      <!-- Telemetry Drawer Toggle -->
+      <button id="btnTelemetryToggle" class="btn-icon" title="Xem 8 thông số cảm biến trạm MakerLab">
+        <span>📊</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN LIVING ROOM STAGE -->
+  <main class="main-stage">
+    
+    <!-- LIVING ROOM SCENE CONTAINER -->
+    <div class="room-wrapper" id="roomWrapper">
+
+      <!-- Dynamic Weather Sky Window Backdrop -->
+      <div class="window-frame" id="windowFrame" title="Cửa sổ nhìn ra trời Gia Định thời gian thực">
+        <div class="sky-canvas-wrapper">
+          <canvas id="skyCanvas"></canvas>
+        </div>
+        <!-- Window Sill & Curtains -->
+        <div class="curtain curtain-left" id="curtainLeft"></div>
+        <div class="curtain curtain-right" id="curtainRight"></div>
+        <div class="window-pane-divider"></div>
+        <div class="window-sill"></div>
+      </div>
+
+      <!-- ROOM WALL FURNITURE & DECOR -->
+      <!-- Wall Barometer -->
+      <div class="furniture wall-barometer" id="barometerWidget" title="Áp kế cơ học theo dõi áp suất khí quyển">
+        <div class="barometer-dial">
+          <div class="barometer-pointer" id="barometerNeedle"></div>
+          <div class="barometer-cap"></div>
+        </div>
+        <div class="barometer-label"><span id="barometerVal">100.4</span> kPa</div>
+      </div>
+
+      <!-- Wall Clock / Sync indicator -->
+      <div class="furniture wall-clock">
+        <div class="clock-face">
+          <div class="clock-hand clock-h" id="clockHandH"></div>
+          <div class="clock-hand clock-m" id="clockHandM"></div>
+        </div>
+      </div>
+
+      <!-- Ambient Wall Art -->
+      <div class="furniture wall-poster" id="wallPoster">
+        <span class="poster-text">GIA ĐỊNH<br>ECO-PULSE</span>
+      </div>
+
+      <!-- Desktop Desk & Floor Decor -->
+      <div class="room-floor">
+        
+        <!-- Potted Houseplant (Reacts to wind & humidity) -->
+        <div class="furniture potted-plant" id="pottedPlant" title="Cây trầu bà lọc không khí (Chạm để tưới nước)">
+          <div class="plant-pot"></div>
+          <div class="plant-stem" id="plantStem">
+            <div class="leaf leaf-1"></div>
+            <div class="leaf leaf-2"></div>
+            <div class="leaf leaf-3"></div>
+            <div class="leaf leaf-4"></div>
+          </div>
+        </div>
+
+        <!-- Electric Retro Desk Fan (Turns on when hot > 30°C) -->
+        <div class="furniture electric-fan" id="electricFan" title="Quạt bàn cổ điển (Chạm để bật/tắt tốc độ)">
+          <div class="fan-head" id="fanHead">
+            <div class="fan-blades" id="fanBlades"></div>
+          </div>
+          <div class="fan-neck"></div>
+          <div class="fan-base">
+            <span class="fan-status-led" id="fanLed"></span>
+          </div>
+        </div>
+
+        <!-- Smart Air Purifier (Turns on when PM2.5 > 35) -->
+        <div class="furniture air-purifier" id="airPurifier" title="Máy lọc không khí HEPA thông minh">
+          <div class="purifier-vent"></div>
+          <div class="purifier-ring" id="purifierRing"></div>
+          <div class="purifier-screen">
+            <span class="purifier-pm-val" id="purifierPmVal">34</span>
+            <span class="purifier-unit">µg</span>
+          </div>
+        </div>
+
+        <!-- Interactive Phonograph / Speaker -->
+        <div class="furniture retro-speaker" id="retroSpeaker" title="Loa phát nhạc Lo-Fi vi khí hậu">
+          <div class="speaker-horn"></div>
+          <div class="speaker-notes" id="speakerNotes"></div>
+        </div>
+
+        <!-- Cozy Rug -->
+        <div class="cozy-rug"></div>
+
+        <!-- Food Bowl Tray -->
+        <div class="furniture food-bowl" id="foodBowl" title="Bát thức ăn của EcoPet (Kéo đồ ăn vào đây)">
+          <div class="bowl-inner" id="bowlDish">
+            <span class="bowl-empty-label" data-i18n="bowlEmpty">Trống</span>
+          </div>
+        </div>
+
+        <!-- THE ECOPET CHARACTER CONTAINER -->
+        <div class="ecopet-stage" id="petStage">
+          
+          <!-- Thought / Speech Bubble -->
+          <div class="speech-bubble" id="petSpeechBubble">
+            <span class="speech-text" id="speechText">Xin chào! Tớ là EcoPet!</span>
+          </div>
+
+          <!-- Dynamic Particles Container (Hearts, Sweat, Zzz, Music) -->
+          <div class="pet-fx-overlay" id="petFxOverlay"></div>
+
+          <!-- The Pet Visual (Squash & Stretch Avatar) -->
+          <div class="ecopet-body-wrapper" id="petBodyWrapper" title="Nhấp hoặc xoa vào EcoPet để nựng!">
+            
+            <!-- Equipped Hat Accessory -->
+            <div class="pet-hat-slot" id="petHatSlot"></div>
+
+            <!-- Pet Ears -->
+            <div class="pet-ear ear-left" id="petEarLeft"></div>
+            <div class="pet-ear ear-right" id="petEarRight"></div>
+
+            <!-- Pet Main Body Mesh -->
+            <div class="pet-torso" id="petTorso">
+              
+              <!-- Facial Features -->
+              <div class="pet-face">
+                <!-- Eyebrows -->
+                <div class="pet-brow brow-left" id="browLeft"></div>
+                <div class="pet-brow brow-right" id="browRight"></div>
+
+                <!-- Eyes -->
+                <div class="pet-eye eye-left" id="eyeLeft">
+                  <div class="eye-pupil"></div>
+                  <div class="eye-shine"></div>
+                </div>
+                <div class="pet-eye eye-right" id="eyeRight">
+                  <div class="eye-pupil"></div>
+                  <div class="eye-shine"></div>
+                </div>
+
+                <!-- Cheeks (Blushing) -->
+                <div class="pet-blush blush-left"></div>
+                <div class="pet-blush blush-right"></div>
+
+                <!-- Nose & Mouth -->
+                <div class="pet-snout">
+                  <div class="pet-nose"></div>
+                  <div class="pet-mouth" id="petMouth"></div>
+                </div>
+
+                <!-- Protective Face Mask (Equips on high PM2.5) -->
+                <div class="pet-face-mask" id="petFaceMask">
+                  <span class="mask-filter-dot"></span>
+                </div>
+
+                <!-- Noise DJ Headphones (Equips on loud street noise > 72dB) -->
+                <div class="pet-headphones" id="petHeadphones">
+                  <div class="headphone-band"></div>
+                  <div class="headphone-cup cup-l"></div>
+                  <div class="headphone-cup cup-r"></div>
+                </div>
+              </div>
+
+              <!-- Pet Scarf / Collar (Sways with wind) -->
+              <div class="pet-scarf" id="petScarf"></div>
+
+              <!-- Pet Paws -->
+              <div class="pet-paw paw-left" id="pawLeft"></div>
+              <div class="pet-paw paw-right" id="pawRight"></div>
+            </div>
+
+            <!-- Tail (Wags happily) -->
+            <div class="pet-tail" id="petTail"></div>
+          </div>
+        </div>
+
+      </div> <!-- /room-floor -->
+    </div> <!-- /room-wrapper -->
+
+    <!-- VITAL STATS BARS (Hunger, Happiness, Energy, Weather Comfort) -->
+    <section class="vitals-dashboard">
+      <div class="vital-item" title="Độ no bụng của EcoPet">
+        <div class="vital-label">
+          <span>🍗 <span data-i18n="hunger">Độ No</span></span>
+          <span class="vital-pct" id="hungerVal">85%</span>
+        </div>
+        <div class="vital-bar-track">
+          <div class="vital-bar-fill fill-hunger" id="hungerBar" style="width: 85%;"></div>
+        </div>
+      </div>
+
+      <div class="vital-item" title="Tâm trạng vui vẻ">
+        <div class="vital-label">
+          <span>💖 <span data-i18n="happiness">Hạnh Phúc</span></span>
+          <span class="vital-pct" id="happyVal">90%</span>
+        </div>
+        <div class="vital-bar-track">
+          <div class="vital-bar-fill fill-happy" id="happyBar" style="width: 90%;"></div>
+        </div>
+      </div>
+
+      <div class="vital-item" title="Mức độ tỉnh táo năng lượng">
+        <div class="vital-label">
+          <span>⚡ <span data-i18n="energy">Năng Lượng</span></span>
+          <span class="vital-pct" id="energyVal">75%</span>
+        </div>
+        <div class="vital-bar-track">
+          <div class="vital-bar-fill fill-energy" id="energyBar" style="width: 75%;"></div>
+        </div>
+      </div>
+
+      <div class="vital-item" title="Độ dễ chịu với vi khí hậu hiện tại">
+        <div class="vital-label">
+          <span>🌿 <span data-i18n="climateComfort">Vi Khí Hậu</span></span>
+          <span class="vital-pct" id="comfortVal">80%</span>
+        </div>
+        <div class="vital-bar-track">
+          <div class="vital-bar-fill fill-comfort" id="comfortBar" style="width: 80%;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- INTERACTIVE ACTION TOOLBAR -->
+    <nav class="action-dock">
+      
+      <!-- Food Pantry Buttons -->
+      <div class="food-pantry">
+        <button class="food-btn" id="foodBanhMi" data-food="banhmi" title="Cho ăn Bánh Mì (+25 No, +10 Hạnh Phúc)">
+          <span class="food-emoji">🥖</span>
+          <span class="food-name">Bánh Mì</span>
+        </button>
+
+        <button class="food-btn" id="foodTraDa" data-food="trada" title="Cho uống Trà Đá Sài Gòn (Hạ nhiệt độ, giải khát)">
+          <span class="food-emoji">🍵</span>
+          <span class="food-name">Trà Đá</span>
+        </button>
+
+        <button class="food-btn" id="foodBoba" data-food="boba" title="Trà Sữa Trân Châu (+30 Hạnh Phúc, +15 Năng Lượng)">
+          <span class="food-emoji">🧋</span>
+          <span class="food-name">Trà Sữa</span>
+        </button>
+
+        <button class="food-btn" id="foodWatermelon" data-food="watermelon" title="Dưa Hấu tươi mát (+20 Giải Nhiệt, +15 No)">
+          <span class="food-emoji">🍉</span>
+          <span class="food-name">Dưa Hấu</span>
+        </button>
+      </div>
+
+      <div class="action-divider"></div>
+
+      <!-- Quick Action Buttons -->
+      <div class="dock-actions">
+        <button class="dock-btn btn-pet" id="btnPetDirect" title="Nựng & Xoa đầu EcoPet">
+          <span class="dock-icon">👋</span>
+          <span data-i18n="actPet">Nựng Bé</span>
+        </button>
+
+        <button class="dock-btn btn-minigame" id="btnOpenArcade" title="Chơi mini-game nhặt quả cầu sinh thái kiếm xu!">
+          <span class="dock-icon">🎮</span>
+          <span data-i18n="actPlay">Chơi Mini-Game</span>
+        </button>
+
+        <button class="dock-btn btn-wardrobe" id="btnOpenWardrobe" title="Cửa hàng trang phục và phụ kiện thời trang">
+          <span class="dock-icon">👒</span>
+          <span data-i18n="actWardrobe">Tủ Đồ</span>
+        </button>
+      </div>
+
+    </nav>
+  </main>
+
+  <!-- ============================================== -->
+  <!-- MODAL: ARCADE MINI-GAME (SKY CATCHER)         -->
+  <!-- ============================================== -->
+  <div class="modal-backdrop" id="arcadeModal">
+    <div class="modal-card arcade-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>🎮</span>
+          <h2 data-i18n="arcadeTitle">Bắt Gió Sạch (Clean Breeze Catcher)</h2>
+        </div>
+        <button class="btn-close" id="btnCloseArcade">✕</button>
+      </div>
+
+      <div class="arcade-hud">
+        <div class="arcade-hud-item">
+          <span class="hud-label" data-i18n="score">Điểm</span>
+          <span class="hud-value" id="gameScore">0</span>
+        </div>
+        <div class="arcade-hud-item">
+          <span class="hud-label" data-i18n="highScore">Kỷ Lục</span>
+          <span class="hud-value" id="gameHighScore">0</span>
+        </div>
+        <div class="arcade-hud-item">
+          <span class="hud-label" data-i18n="windMultiplier">Gió Thật</span>
+          <span class="hud-value" id="gameWindModifier">1.0x</span>
+        </div>
+      </div>
+
+      <div class="canvas-container">
+        <canvas id="arcadeCanvas" width="480" height="340"></canvas>
+        <div class="arcade-overlay" id="arcadeStartScreen">
+          <p class="arcade-instructions" data-i18n="arcadeInst">
+            Di chuyển chuột hoặc phím mũi tên [←] [→] để hứng <b>Làn Gió Xanh 🍃</b> và <b>Tia Nắng ☀️</b>. Tránh né <b>Bụi Mịn PM2.5 🌫️</b>!
+          </p>
+          <button class="btn-primary" id="btnStartArcadeGame" data-i18n="arcadeStartBtn">Bắt Đầu Bay!</button>
+        </div>
+      </div>
+
+      <div class="arcade-controls-mobile">
+        <button class="mobile-dir-btn" id="btnMoveLeft">◀ Trái</button>
+        <button class="mobile-dir-btn" id="btnMoveRight">Phải ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: WARDROBE ACCESSORY SHOP                -->
+  <!-- ============================================== -->
+  <div class="modal-backdrop" id="wardrobeModal">
+    <div class="modal-card wardrobe-card">
+      <div class="modal-header">
+        <div class="modal-title">
+          <span>👒</span>
+          <h2 data-i18n="wardrobeTitle">Tủ Đồ Phụ Kiện EcoPet</h2>
+        </div>
+        <button class="btn-close" id="btnCloseWardrobe">✕</button>
+      </div>
+      
+      <p class="wardrobe-sub" data-i18n="wardrobeSub">Dùng EcoCoins kiếm từ việc chăm sóc và mini-game để diện đồ cho bé!</p>
+
+      <div class="wardrobe-grid" id="wardrobeGrid">
+        <!-- Injected via app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- DRAWER: LIVE TELEMETRY SENSOR MATRIX (8 GAUGES)-->
+  <!-- ============================================== -->
+  <aside class="telemetry-drawer" id="telemetryDrawer">
+    <div class="drawer-header">
+      <div class="drawer-title">
+        <span>📡</span>
+        <h3 data-i18n="telemetryTitle">Trạm Quan Trắc MakerLab Gia Định</h3>
+      </div>
+      <button class="btn-close" id="btnCloseTelemetry">✕</button>
+    </div>
+
+    <div class="station-meta-strip">
+      <span class="meta-tag">Kênh ID: <b>3428136</b></span>
+      <span class="meta-tag" id="lastUpdatedTag">Cập nhật: --</span>
+      <span class="meta-tag" id="refreshCountdownTag">Đếm ngược: 20s</span>
+    </div>
+
+    <!-- 8 SENSOR CARDS -->
+    <div class="sensors-grid">
+      
+      <!-- Field 1: Wind Speed -->
+      <div class="sensor-card">
+        <div class="sensor-icon">💨</div>
+        <div class="sensor-info">
+          <span class="sensor-name" data-i18n="sensWindSpeed">Tốc Độ Gió</span>
+          <div class="sensor-data">
+            <span class="sensor-val" id="valWindSpeed">--</span>
+            <span class="sensor-unit">m/s</span>
+          </div>
+          <span class="sensor-badge" id="badgeWindSpeed">Gió Nhẹ</span>
+        </div>
+      </div>
+
+      <!-- Field 2: Wind Direction -->
+      <div class="sensor-card">
+        <div class="sensor-icon">🧭</div>
+        <div class="sensor-info">
+          <span class="sensor-name" data-i18n="sensWindDir">Hướng Gió</span>
+          <div class="sensor-data">
+            <span class="sensor-val" id="valWindDir">--</span>
+            <span class="sensor-unit">°</span>
+          </div>
+          <span class="sensor-badge" id="badgeWindDir">Đông (E)</span>
+        </div>
+      </div>
+
+      <!-- Field 3: Temperature -->
+      <div class="sensor-card">
+        <div class="sensor-icon">🌡️</div>
+        <div class="sensor-info">
+          <span class="sensor-name" data-i18n="sensTemp">Nhiệt Độ Không Khí</span>
+          <div class="sensor-data">
+            <span class="sensor-val" id="valTemp">--</span>
+            <span class="sensor-unit">°C</span>
+          </div>
+          <span class="sensor-badge" id="badgeTemp">Ấm Áp</span>
+        </div>
+      </div>
+
+      <!-- Field 4: Barometric Pressure -->
+      <div class="sensor-card">
+        <div class="sensor-icon">⏱️</div>
+        <div class="sensor-info">
+          <span class="sensor-name" data-i18n="sensPressure">Áp Suất Khí Quyển</span>
+          <div class="sensor-data">
+            <span class="sensor-val" id="valPressure">--</span>
+            <span class="sensor-unit">kPa</span>
+          </div>
+          <span class="sensor-badge" id="badgePressure">Ổn Định</span>
+        </div>
+      </div>
+
+      <!-- Field 5: Solar Light -->
+      <div class="sensor-card">
+        <div class="sensor-icon">☀️</div>
+        <div class="sensor-info">
+          <span class="sensor-name" data-i18n="sensLight">Cường Độ Ánh Sáng</span>
+          <div class="sensor-data">
+            <span class="sensor-val" id="valLight">--</span>
+            <span class="sensor-unit">lux</span>
+          </div>
+          <span class="sensor-badge" id="badgeLight">Ban Ngày</span>
+        </div>
+      </div>
+
+      <!-- Field 6: Relative Humidity -->
+      <div class="sensor-card">
+        <div class="sensor-icon">💧</div>
+        <div class="sensor-info">
+          <span class="sensor-name" data-i18n="sensHumidity">Độ Ẩm Không Khí</span>
+          <div class="sensor-data">
+            <span class="sensor-val" id="valHumidity">--</span>
+            <span class="sensor-unit">%RH</span>
+          </div>
+          <span class="sensor-badge" id="badgeHumidity">Khá Ẩm</span>
+        </div>
+      </div>
+
+      <!-- Field 7: Street Noise -->
+      <div class="sensor-card">
+        <div class="sensor-icon">🔊</div>
+        <div class="sensor-info">
+          <span class="sensor-name" data-i18n="sensNoise">Độ Ồn Môi Trường</span>
+          <div class="sensor-data">
+            <span class="sensor-val" id="valNoise">--</span>
+            <span class="sensor-unit">dB</span>
+          </div>
+          <span class="sensor-badge" id="badgeNoise">Vừa Phải</span>
+        </div>
+      </div>
+
+      <!-- Field 8: PM2.5 Fine Dust -->
+      <div class="sensor-card">
+        <div class="sensor-icon">🌫️</div>
+        <div class="sensor-info">
+          <span class="sensor-name" data-i18n="sensPM25">Bụi Mịn PM2.5</span>
+          <div class="sensor-data">
+            <span class="sensor-val" id="valPM25">--</span>
+            <span class="sensor-unit">µg/m³</span>
+          </div>
+          <span class="sensor-badge" id="badgePM25">Trung Bình</span>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- ============================================== -->
+  <!-- PANEL: WEATHER GOD MODE (SANDBOX SLIDERS)     -->
+  <!-- ============================================== -->
+  <aside class="godmode-panel" id="godmodePanel">
+    <div class="godmode-header">
+      <div class="godmode-title">
+        <span>⚡</span>
+        <div>
+          <h3 data-i18n="godModeTitle">Hộp Cát Thời Tiết (Weather God Mode)</h3>
+          <span class="godmode-sub" data-i18n="godModeSub">Kéo thanh trượt để thử nghiệm phản ứng của EcoPet!</span>
+        </div>
+      </div>
+      <button class="btn-close" id="btnCloseGodMode">✕</button>
+    </div>
+
+    <div class="sliders-list">
+      
+      <!-- Wind Speed Slider -->
+      <div class="slider-group">
+        <div class="slider-head">
+          <span>💨 Tốc Độ Gió</span>
+          <b id="godValWind">1.0 m/s</b>
+        </div>
+        <input type="range" id="godSliderWind" min="0" max="25" step="0.5" value="1.0">
+      </div>
+
+      <!-- Wind Direction Slider -->
+      <div class="slider-group">
+        <div class="slider-head">
+          <span>🧭 Hướng Gió (Độ)</span>
+          <b id="godValDir">90°</b>
+        </div>
+        <input type="range" id="godSliderDir" min="0" max="360" step="5" value="90">
+      </div>
+
+      <!-- Temperature Slider -->
+      <div class="slider-group">
+        <div class="slider-head">
+          <span>🌡️ Nhiệt Độ</span>
+          <b id="godValTemp">29.0 °C</b>
+        </div>
+        <input type="range" id="godSliderTemp" min="12" max="45" step="0.5" value="29.0">
+      </div>
+
+      <!-- Barometric Pressure Slider -->
+      <div class="slider-group">
+        <div class="slider-head">
+          <span>⏱️ Áp Suất Khí Quyển</span>
+          <b id="godValPressure">100.4 kPa</b>
+        </div>
+        <input type="range" id="godSliderPressure" min="95" max="105" step="0.1" value="100.4">
+      </div>
+
+      <!-- Solar Light Slider -->
+      <div class="slider-group">
+        <div class="slider-head">
+          <span>☀️ Ánh Sáng (Lux)</span>
+          <b id="godValLight">800 lux</b>
+        </div>
+        <input type="range" id="godSliderLight" min="0" max="3000" step="50" value="800">
+      </div>
+
+      <!-- Humidity Slider -->
+      <div class="slider-group">
+        <div class="slider-head">
+          <span>💧 Độ Ẩm (%RH)</span>
+          <b id="godValHumidity">76 %</b>
+        </div>
+        <input type="range" id="godSliderHumidity" min="20" max="100" step="1" value="76">
+      </div>
+
+      <!-- Noise Slider -->
+      <div class="slider-group">
+        <div class="slider-head">
+          <span>🔊 Tiếng Ồn Đô Thị</span>
+          <b id="godValNoise">72 dB</b>
+        </div>
+        <input type="range" id="godSliderNoise" min="30" max="105" step="1" value="72">
+      </div>
+
+      <!-- PM2.5 Slider -->
+      <div class="slider-group">
+        <div class="slider-head">
+          <span>🌫️ Bụi Mịn PM2.5</span>
+          <b id="godValPM25">35 µg/m³</b>
+        </div>
+        <input type="range" id="godSliderPM25" min="0" max="250" step="2" value="35">
+      </div>
+
+      <!-- Preset Scenarios -->
+      <div class="preset-buttons">
+        <span class="preset-label" data-i18n="presets">Kịch bản nhanh:</span>
+        <div class="preset-row">
+          <button class="btn-preset" data-preset="saigon-heat">🔥 Nắng Gắt Sài Gòn</button>
+          <button class="btn-preset" data-preset="typhoon">🌀 Bão Giật Mạnh</button>
+          <button class="btn-preset" data-preset="smog">🌫️ Sương Mù Ô Nhiễm</button>
+          <button class="btn-preset" data-preset="cozy-night">🌙 Đêm Khuya Yên Bình</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <script src="app.js"></script>
+</body>
+</html>
